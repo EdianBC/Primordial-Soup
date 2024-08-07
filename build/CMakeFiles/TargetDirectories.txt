@@ -1,0 +1,3 @@
+/home/edianbc/Projects/Primordial-Soup/build/CMakeFiles/PrimordialSoup.exe.dir
+/home/edianbc/Projects/Primordial-Soup/build/CMakeFiles/edit_cache.dir
+/home/edianbc/Projects/Primordial-Soup/build/CMakeFiles/rebuild_cache.dir

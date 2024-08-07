@@ -1,0 +1,7 @@
+[
+{
+  "directory": "/home/edianbc/Projects/Primordial-Soup/build",
+  "command": "/usr/bin/g++   -g -o CMakeFiles/PrimordialSoup.exe.dir/src/main.cpp.o -c /home/edianbc/Projects/Primordial-Soup/src/main.cpp",
+  "file": "/home/edianbc/Projects/Primordial-Soup/src/main.cpp"
+}
+]
