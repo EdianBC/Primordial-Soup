@@ -2,85 +2,139 @@
 #include <vector>
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 
-enum class ShapeType { Circle, Rectangle, Triangle };
+using namespace sf;
+using namespace std;
 
-sf::Shape* createRandomShape(const sf::Vector2f& position) {
-    ShapeType type = static_cast<ShapeType>(std::rand() % 3);
-    sf::Shape* shape = nullptr;
-
-    switch (type) {
-        case ShapeType::Circle: {
-            float radius = 10 + std::rand() % 40;
-            shape = new sf::CircleShape(radius);
-            break;
-        }
-        case ShapeType::Rectangle: {
-            float width = 20 + std::rand() % 80;
-            float height = 20 + std::rand() % 80;
-            shape = new sf::RectangleShape(sf::Vector2f(width, height));
-            break;
-        }
-        case ShapeType::Triangle: {
-            float size = 20 + std::rand() % 60;
-            shape = new sf::CircleShape(size, 3);
-            break;
-        }
-    }
-
-    shape->setPosition(position);
-    shape->setFillColor(sf::Color(std::rand() % 256, std::rand() % 256, std::rand() % 256));
-    return shape;
+// Función para calcular la distancia entre dos puntos
+float distance(Vector2f a, Vector2f b)
+{
+    return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
 }
 
-int main() {
-    std::srand(static_cast<unsigned>(std::time(nullptr)));
+int main()
+{
+    // Crear la ventana
+    RenderWindow window(VideoMode(1200, 800), "Primordial Soup");
 
-    sf::RenderWindow window(sf::VideoMode(800, 600), "SFML Shapes");
-    std::vector<sf::Shape*> shapes;
-
-    sf::Font font;
-    if (!font.loadFromFile("../resources/OpenSans-Regular.ttf")) { // Cambia el nombre si usaste otro archivo .ttf
+    // Cargar la fuente
+    Font font;
+    if (!font.loadFromFile("../resources/OpenSans-Regular.ttf"))
+    {
         return -1;
     }
 
-    sf::Text counterText;
-    counterText.setFont(font);
-    counterText.setCharacterSize(24);
-    counterText.setFillColor(sf::Color::White);
-    counterText.setPosition(10.f, 10.f);
+    // Crear el texto del título
+    Text titleText;
+    titleText.setFont(font);
+    titleText.setString("Primordial Soup");
+    titleText.setCharacterSize(36);
+    titleText.setFillColor(Color::White);
+    titleText.setStyle(Text::Bold);
+    titleText.setPosition(850, 20); // Posición en el panel de datos
 
-    while (window.isOpen()) {
-        sf::Event event;
-        while (window.pollEvent(event)) {
-            if (event.type == sf::Event::Closed)
+    // Crear el área de visualización del mapa
+    RectangleShape mapArea(Vector2f(800, 800));
+    mapArea.setFillColor(Color(50, 50, 50)); // Color gris oscuro
+    mapArea.setPosition(0, 0);
+
+    // Crear el panel de datos
+    RectangleShape dataPanel(Vector2f(400, 800));
+    dataPanel.setFillColor(Color(30, 30, 30)); // Color gris más oscuro
+    dataPanel.setPosition(800, 0);
+
+    // Semilla para números aleatorios
+    srand(static_cast<unsigned>(time(0)));
+
+    // Crear los círculos
+    const int numCircles = 1000;
+    vector<CircleShape> circles(numCircles);
+    vector<Vector2f> velocities(numCircles);
+
+    for (int i = 0; i < numCircles; ++i)
+    {
+        for (int i = 0; i < numCircles; ++i)
+        {
+            circles[i].setRadius(3.f);
+
+            // Color aleatorio
+            int r = rand() % 256;
+            int g = rand() % 256;
+            int b = rand() % 256;
+            circles[i].setFillColor(Color(r, g, b));
+
+            // Posición aleatoria dentro del área del mapa
+            float x = static_cast<float>(rand() % 800);
+            float y = static_cast<float>(rand() % 800);
+            circles[i].setPosition(x, y);
+
+            // Dirección aleatoria
+            float vx = (static_cast<float>(rand()) / RAND_MAX) * 2.f - 1.f;
+            float vy = (static_cast<float>(rand()) / RAND_MAX) * 2.f - 1.f;
+            velocities[i] = Vector2f(vx, vy);
+        }
+    }
+
+    // Bucle principal
+    while (window.isOpen())
+    {
+        Event event;
+        while (window.pollEvent(event))
+        {
+            if (event.type == Event::Closed)
+            {
                 window.close();
-            if (event.type == sf::Event::KeyPressed) {
-                if (event.key.code == sf::Keyboard::A) {
-                    sf::Vector2f position(std::rand() % window.getSize().x, std::rand() % window.getSize().y);
-                    shapes.push_back(createRandomShape(position));
-                } else if (event.key.code == sf::Keyboard::D && !shapes.empty()) {
-                    delete shapes.back();
-                    shapes.pop_back();
+            }
+        }
+
+        // Actualizar posiciones y gestionar colisiones
+        for (int i = 0; i < numCircles; ++i)
+        {
+            Vector2f pos = circles[i].getPosition();
+            pos += velocities[i];
+
+            // Rebotar en los bordes del mapa
+            if (pos.x <= 0 || pos.x >= 797)
+                velocities[i].x = -velocities[i].x;
+            if (pos.y <= 0 || pos.y >= 797)
+                velocities[i].y = -velocities[i].y;
+
+            // Actualizar la posición
+            circles[i].setPosition(pos);
+        }
+
+        // Detectar y manejar colisiones entre partículas
+        for (int i = 0; i < numCircles; ++i)
+        {
+            for (int j = i + 1; j < numCircles; ++j)
+            {
+                if (distance(circles[i].getPosition(), circles[j].getPosition()) <= 2 * circles[i].getRadius())
+                {
+                    // Intercambiar las velocidades (rebote elástico simple)
+                    swap(velocities[i], velocities[j]);
                 }
             }
         }
 
         window.clear();
 
-        for (auto shape : shapes) {
-            window.draw(*shape);
+        // Dibujar el área del mapa
+        window.draw(mapArea);
+
+        // Dibujar los círculos
+        for (const auto &circle : circles)
+        {
+            window.draw(circle);
         }
 
-        counterText.setString("Count: " + std::to_string(shapes.size()));
-        window.draw(counterText);
+        // Dibujar el panel de datos
+        window.draw(dataPanel);
+
+        // Dibujar el título del proyecto
+        window.draw(titleText);
 
         window.display();
-    }
-
-    // Cleanup shapes
-    for (auto shape : shapes) {
-        delete shape;
     }
 
     return 0;
